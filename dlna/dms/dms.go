@@ -228,7 +228,7 @@ type Server struct {
 	closed         chan struct{}
 	ssdpStopped    chan struct{}
 	// The service SOAP handler keyed by service URN.
-	services   map[string]UPnPService
+	Services   map[string]UPnPService
 	LogHeaders bool
 	// Disable transcoding, and the resource elements implied in the CDS.
 	NoTranscode bool
@@ -519,7 +519,7 @@ func marshalSOAPResponse(sa upnp.SoapAction, args map[string]string) []byte {
 
 // Handle a SOAP request and return the response arguments or UPnP error.
 func (me *Server) soapActionResponse(sa upnp.SoapAction, actionRequestXML []byte, r *http.Request) (map[string]string, error) {
-	service, ok := me.services[sa.Type]
+	service, ok := me.Services[sa.Type]
 	if !ok {
 		// TODO: What's the invalid service error?!
 		return nil, upnp.Errorf(upnp.InvalidActionErrorCode, "Invalid service: %s", sa.Type)
@@ -603,7 +603,7 @@ func (me *Server) serveIcon(w http.ResponseWriter, r *http.Request) {
 func (server *Server) contentDirectoryInitialEvent(urls []*url.URL, sid string) {
 	body := xmlMarshalOrPanic(upnp.PropertySet{
 		Properties: []upnp.Property{
-			upnp.Property{
+			{
 				Variable: upnp.Variable{
 					XMLName: xml.Name{
 						Local: "SystemUpdateID",
@@ -686,7 +686,7 @@ func (server *Server) contentDirectoryEventSubHandler(w http.ResponseWriter, r *
 	// the spec on eventing but hasn't been completed as I have nothing to
 	// test it with.
 	eventingLogger.Print(r.Header)
-	service := server.services["ContentDirectory"]
+	service := server.Services["ContentDirectory"]
 	eventingLogger.Println(r.RemoteAddr, r.Method, r.Header.Get("SID"))
 	if r.Method == "SUBSCRIBE" && r.Header.Get("SID") == "" {
 		urls := upnp.ParseCallbackURLs(r.Header.Get("CALLBACK"))
@@ -784,7 +784,7 @@ func (s *Server) initServices() (err error) {
 	if err != nil {
 		return
 	}
-	s.services = map[string]UPnPService{
+	s.Services = map[string]UPnPService{
 		urn.Type: &contentDirectoryService{
 			Server: s,
 		},
